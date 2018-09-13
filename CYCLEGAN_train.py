@@ -1,4 +1,6 @@
 
+# TODO : CycleGAN test
+
 import itertools
 import os
 import pickle
@@ -8,8 +10,11 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 from RED_CNN_util import build_dataset, train_dcm_data_loader
-from CYCLEGAN_util import Generator, Discriminator, weights_init_normal, ReplayBuffer, LambdaLR
+from CYCLEGAN_util import Generator, Discriminator, weights_init_normal, ReplayBuffer, LambdaLR_
 from logger import Logger
+
+os.environ['CUDA_VISIBLE_DEVICES'] = "1,2,3"
+
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -19,12 +24,12 @@ def main():
     DECAY_EPOCH = 50
     NUM_EPOCH = 100
     BATCH_SIZE = 3
-    CROP_NUMBER = 60
+    CROP_NUMBER = 10
+    CROP_SIZE = 128
     LR = 0.0002
     N_CPU = 30
-    CROP_SIZE = 64
 
-    save_path = '/home/shsy0404/result/cycleGAN_result/'
+    save_path = '/home/shsy0404//result/cycleGAN_result/cyclegan_result_128patch/'
 
     Gene_AB = Generator(input_nc, output_nc, 9)
     Gene_BA = Generator(output_nc, input_nc, 9)
@@ -59,9 +64,9 @@ def main():
     optimizer_D_B = torch.optim.Adam(Disc_B.parameters(), lr=LR, betas=(0.5,0.999))
 
     # learning rate schedulers
-    lr_scheduler_G = torch.optim.lr_scheduler.LambdaLR(optimizer_G, lr_lambda=LambdaLR(NUM_EPOCH, START_EPOCH, DECAY_EPOCH).step)
-    lr_scheduler_D_A = torch.optim.lr_scheduler.LambdaLR(optimizer_D_A, lr_lambda=LambdaLR(NUM_EPOCH, START_EPOCH, DECAY_EPOCH).step)
-    lr_scheduler_D_B = torch.optim.lr_scheduler.LambdaLR(optimizer_D_B, lr_lambda=LambdaLR(NUM_EPOCH, START_EPOCH, DECAY_EPOCH).step)
+    lr_scheduler_G = torch.optim.lr_scheduler.LambdaLR(optimizer_G, lr_lambda=LambdaLR_(NUM_EPOCH, START_EPOCH, DECAY_EPOCH).step)
+    lr_scheduler_D_A = torch.optim.lr_scheduler.LambdaLR(optimizer_D_A, lr_lambda=LambdaLR_(NUM_EPOCH, START_EPOCH, DECAY_EPOCH).step)
+    lr_scheduler_D_B = torch.optim.lr_scheduler.LambdaLR(optimizer_D_B, lr_lambda=LambdaLR_(NUM_EPOCH, START_EPOCH, DECAY_EPOCH).step)
 
     # input & target
     Tensor = torch.cuda.FloatTensor
@@ -78,6 +83,13 @@ def main():
     input_dir, target_dir, test_input_dir, test_target_dir = build_dataset(['L067','L291'], "3mm", norm_range=(-1024.0, 3072.0))
     train_dcm = train_dcm_data_loader(input_dir, target_dir, crop_size=CROP_SIZE, crop_n=CROP_NUMBER)
     train_loader = DataLoader(train_dcm, batch_size=BATCH_SIZE, shuffle=True, num_workers=N_CPU, drop_last=True)
+
+    '''
+    Gene_AB.load_state_dict(torch.load(os.path.join(save_path, '/L506_cyclegan_GAB_patch_70ep.ckpt')))
+    Gene_BA.load_state_dict(torch.load(os.path.join(save_path, '/L506_cyclegan_GBA_patch_70ep.ckpt')))
+    Disc_A.load_state_dict(torch.load(os.path.join(save_path, '/L506_cyclegan_DA_patch_70ep.ckpt')))
+    Disc_B.load_state_dict(torch.load(os.path.join(save_path, '/L506_cyclegan_DB_patch_70ep.ckpt')))
+    '''
 
     #logger = Logger(NUM_EPOCH, len(train_loader))
     logger = Logger(os.path.join(save_path, 'logs'))
@@ -186,13 +198,13 @@ def main():
 
             if (i + 1) % 10 == 0:
                 print("EPOCH [{}/{}], STEP [{}/{}]".format(epoch+1, NUM_EPOCH, i+1, len(train_loader)))
-                print("Loss G: {}, \nLoss_G_identity: {}, \nLoss_G_GAN: {}, \nLoss_G_cycle: {}, \nLoss D: {} \nLoss_DA: {} \nLoss DB: {} \n==== \n".format(loss_G, (loss_identity_A+loss_identity_B), (loss_GAN_AB+loss_GAN_BA), (loss_cycle_ABA+loss_cycle_BAB), (loss_D_A+loss_D_B), (loss_D_A), (loss_D_B)))
+                print("Loss G: {} \nLoss_G_identity: {} \nLoss_G_GAN: {} \nLoss_G_cycle: {} \nLoss D: {} \nLoss_DA: {} \nLoss DB: {} \n==== \n".format(loss_G, (loss_identity_A+loss_identity_B), (loss_GAN_AB+loss_GAN_BA), (loss_cycle_ABA+loss_cycle_BAB), (loss_D_A+loss_D_B), (loss_D_A), (loss_D_B)))
 
         if (epoch + 1) % 5 == 0:
-            torch.save(Gene_AB.state_dict(), os.path.join(save_path, '{}_cyclegan_GAB_patch_{}ep.ckpt'.format("L506", epoch+1)))
-            torch.save(Gene_BA.state_dict(), os.path.join(save_path, '{}_cyclegan_GBA_patch_{}ep.ckpt'.format("L506", epoch+1)))
-            torch.save(Disc_A.state_dict(), os.path.join(save_path, '{}_cyclegan_DA_patch_{}ep.ckpt'.format("L506", epoch+1)))
-            torch.save(Disc_B.state_dict(), os.path.join(save_path, '{}_cyclegan_DB_patch_{}ep.ckpt'.format("L506", epoch+1)))
+            torch.save(Gene_AB.state_dict(), os.path.join(save_path, 'cyclegan_GAB_patch_{}ep.ckpt'.format(epoch+1)))
+            torch.save(Gene_BA.state_dict(), os.path.join(save_path, 'cyclegan_GBA_patch_{}ep.ckpt'.format(epoch+1)))
+            torch.save(Disc_A.state_dict(), os.path.join(save_path, 'cyclegan_DA_patch_{}ep.ckpt'.format(epoch+1)))
+            torch.save(Disc_B.state_dict(), os.path.join(save_path, 'cyclegan_DB_patch_{}ep.ckpt'.format(epoch+1)))
 
             # loss save per each epoch
             result_loss = {'id_A': list_loss_id_A, 'id_B': list_loss_id_B, 'gan_AB': list_loss_gan_AB, 'gan_BA': list_loss_gan_BA, 'cycle_ABA': list_loss_cycle_ABA, 'cycle_BAB': list_loss_cycle_BAB, 'disc_A': list_loss_D_A, 'disc_B': list_loss_D_B}
