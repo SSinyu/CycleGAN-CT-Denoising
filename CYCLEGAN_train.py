@@ -1,6 +1,3 @@
-
-# TODO : CycleGAN test
-
 import itertools
 import os
 import pickle
@@ -13,7 +10,7 @@ from RED_CNN_util import build_dataset, train_dcm_data_loader
 from CYCLEGAN_util import Generator, Discriminator, weights_init_normal, ReplayBuffer, LambdaLR_
 from logger import Logger
 
-os.environ['CUDA_VISIBLE_DEVICES'] = "1,2,3"
+#os.environ['CUDA_VISIBLE_DEVICES'] = "1,2,3"
 
 
 def main():
@@ -185,7 +182,7 @@ def main():
             list_loss_cycle_BAB.append(loss_cycle_BAB.item())
             list_loss_D_A.append(loss_D_A.item())
             list_loss_D_B.append(loss_D_B.item())
-
+            '''
             # progress report (http://localhost:8097)
             #logger.log({'loss_G': loss_G, 'loss_G_identity': (loss_identity_A + loss_identity_B), 'loss_G_GAN': (loss_GAN_AB + loss_GAN_BA), 'loss_G_cycle': (loss_cycle_ABA + loss_cycle_BAB), 'loss_D': (loss_D_A + loss_D_B)}, images={'real_A': real_A, 'real_B': real_B, 'fake_A': fake_A, 'fake_B': fake_B})
 
@@ -194,7 +191,7 @@ def main():
             info = {'identity_A': loss_identity_A.item(), 'identity_B': loss_identity_B.item(), 'gan_AB': loss_GAN_AB.item(), 'gan_BA': loss_GAN_BA.item(), 'cycle_ABA': loss_cycle_ABA.item(), 'cycle_BAB': loss_cycle_BAB.item(), 'disc_A': loss_D_A.item(), 'disc_B': loss_D_B.item()}
             for tag, value in info.items():
                 logger.scalar_summary(tag, value, step+1)
-
+            '''
 
             if (i + 1) % 10 == 0:
                 print("EPOCH [{}/{}], STEP [{}/{}]".format(epoch+1, NUM_EPOCH, i+1, len(train_loader)))
