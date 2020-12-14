@@ -14,6 +14,7 @@ class DataLoader(utils.Sequence):
         test_patient="L506",
         batch_size=8,
         train_pair=True,
+        patch_size=256,
     ):
         super(DataLoader, self).__init__()
         assert mode in ["train", "valid", "test"]
@@ -27,9 +28,13 @@ class DataLoader(utils.Sequence):
         self.test_patient = test_patient
         self.batch_size = batch_size
         self.train_pair = train_pair
+        self.patch_size = patch_size
 
         self.ldct, self.ndct = self.load(ldct_paths, ndct_paths)
-        self.input_size = self.ldct[0].shape
+        if self.patch_size is not None:
+            self.input_size = (patch_size, patch_size)
+        else:
+            self.input_size = self.ldct[0].shape
         self.indexes = np.arange(len(self.ldct))
 
         self.on_epoch_end()
@@ -88,6 +93,36 @@ class DataLoader(utils.Sequence):
                 data = {"image":ldct, "mask":ndct}
                 aug = self.aug(**data)
                 ldct, ndct = aug["image"], aug["mask"]
-
+                ldct, ndct = self.random_crop(ldct, ndct)
+            else:
+                ldct = self.center_crop(ldct)
+                ndct = self.center_crop(ndct)
             bx[i], by[i] = ldct, ndct
         return bx[...,np.newaxis], by[...,np.newaxis]
+
+    def random_crop(self, img, mask):
+        assert img.shape == mask.shape
+
+        if isinstance(self.patch_size, int):
+            crop_size = (self.patch_size, self.patch_size)
+
+        h, w = img.shape
+        x = np.random.randint(0, (h-crop_size[0]))
+        y = np.random.randint(0, (w-crop_size[1]))
+
+        cropped_img = img[
+            x:(x+crop_size[0]),
+            y:(y+crop_size[1])
+        ]
+        cropped_mask = mask[
+            x:(x+crop_size[0]),
+            y:(y+crop_size[1])
+        ]
+        return cropped_img, cropped_mask
+
+    def center_crop(self, img):
+        x, y = img.shape
+        startx = x//2 - (self.patch_size//2)
+        starty = y//2 - (self.patch_size//2)
+        return img[startx:(startx+self.patch_size), \
+                   starty:(starty+self.patch_size)]
