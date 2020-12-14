@@ -1,0 +1,29 @@
+mode: train
+dataset:
+    data_path: ./prep
+    valid_patient: L333
+    test_patient: L506
+    batch_size: 4
+augmentation:
+    grid_distort: 0.3
+    elastic_deform: 0.3
+    histeq: 0.3
+generator:
+    n_filter: 64
+    n_downs: 2
+    n_resblocks: 9
+    tconv: False
+training:
+    g_optimizer:
+        learning_rate: 0.0001
+        beta_1: 0.5
+        beta_2: 0.999
+    d_optimizer:
+        learning_rate: 0.0001
+        beta_1: 0.5
+        beta_2: 0.999
+    epochs: 200
+    print_iter: 10
+    save_epoch: 5
+    save_path: ./save
+gpu_no: 0
