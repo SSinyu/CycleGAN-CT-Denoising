@@ -5,12 +5,9 @@ import tensorflow as tf
 from tensorflow.keras.optimizers import schedules
 
 
-def min_max_norm(img, zeroone=False):
-    out = ((img-img.min()) / (img.max()-img.min())
-    if zeroone:
-        return out
-    else:
-        return out*2-1
+def min_max_norm(img):
+    out = ((img-img.min()) / (img.max()-img.min()))
+    return out
 
 
 def standardization(img):
