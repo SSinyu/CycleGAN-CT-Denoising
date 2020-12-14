@@ -14,8 +14,6 @@ class DataLoader(utils.Sequence):
         test_patient="L506",
         batch_size=8,
         train_pair=True,
-        # n_patches=None,
-        # patch_size=None
     ):
         super(DataLoader, self).__init__()
         assert mode in ["train", "valid", "test"]
@@ -79,8 +77,12 @@ class DataLoader(utils.Sequence):
         bx = np.zeros((self.batch_size, *self.input_size), dtype=np.float32)
         by = np.zeros((self.batch_size, *self.input_size), dtype=np.float32)
 
-        for i, bi in enumerate(indexes):
-            ldct, ndct = self.ldct[bi], self.ndct[bi]
+        for i, ldct_i in enumerate(indexes):
+            if self.train_pair is True:
+                ndct_i = ldct_i
+            else:
+                ndct_i = ldct_i-1 if ldct_i != 0 else ldct_i+1
+            ldct, ndct = self.ldct[ldct_i], self.ndct[ndct_i]
 
             if self.mode == "train":
                 data = {"image":ldct, "mask":ndct}
