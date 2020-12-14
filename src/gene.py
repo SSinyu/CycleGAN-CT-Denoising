@@ -13,6 +13,7 @@ s1_params = {
 }
 s2_params = s1_params.copy()
 s2_params["strides"] = 2
+s2_params["padding"] = "same"
 
 
 class ResidualEncodeBlock(layers.Layer):
@@ -33,9 +34,9 @@ class ResidualEncodeBlock(layers.Layer):
         return self.add([x, out])
 
 
-class ResNetGenerator(Model):
+class Generator(Model):
     def __init__(self, n_filter=64, n_downs=2, n_resblocks=9, tconv=False):
-        super(ResNetGenerator, self).__init__()
+        super(Generator, self).__init__()
         # c7s1-64
         self.blocks0 = Sequential([
             ReflectionPadding2D(3),
@@ -79,3 +80,7 @@ class ResNetGenerator(Model):
         out = self.blocks2(out)
         out = self.blocks3(out)
         return self.blocks4(out)
+
+    def get_summary(self, input_shape=(256,256,1)):
+        inputs = Input(input_shape)
+        return Model(inputs, self.call(inputs)).summary()
